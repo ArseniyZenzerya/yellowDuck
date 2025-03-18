@@ -3,7 +3,9 @@
     use App\Http\Controllers\TelegramController;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Route;
-
+    use App\Http\Controllers\WebhookController;
+    use App\Services\TelegramWebhookService;
+    use App\Services\TrelloWebhookService;
     /*
     |--------------------------------------------------------------------------
     | API Routes
@@ -19,4 +21,11 @@
         return $request->user();
     });
 
-    Route::post('/webhook', [TelegramController::class, 'webhook']);
+
+    Route::post('/webhook/telegram', function (Request $request, TelegramWebhookService $handler) {
+        return (new WebhookController($handler))->webhook($request);
+    });
+
+    Route::post('/webhook/trello', function (Request $request, TrelloWebhookService $handler) {
+        return (new WebhookController($handler))->webhook($request);
+    });
