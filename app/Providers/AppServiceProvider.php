@@ -16,6 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(UserServiceInterface::class, UserService::class);
+
         $this->app->singleton(TelegramWebhookService::class, function ($app) {
             $telegramService = $app->make(TelegramService::class);
             $userService = $app->make(UserServiceInterface::class);
