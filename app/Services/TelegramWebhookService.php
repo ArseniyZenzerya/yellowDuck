@@ -79,16 +79,20 @@
             $this->telegramService->sendMessage($chatId, $message);
         }
 
+
         private function handleTaskReportCommand(int $chatId): void
         {
             $users = $this->userService->getAllUsersInGroup();
             $report = "Звіт по завданням:\n";
 
+            // Получаем списки доски Trello и создаем соответствие ID -> Название
             $lists = $this->trelloService->getBoardLists();
             $statusMapping = [];
 
             foreach ($lists as $list) {
-                $statusMapping[$list['id']] = $list['name'];
+                if (isset($list['id'], $list['name'])) {
+                    $statusMapping[$list['id']] = $list['name'];
+                }
             }
 
             foreach ($users as $user) {
@@ -102,12 +106,17 @@
                 $report .= "{$user->name} - поточні завдання:\n";
 
                 foreach ($tasks as $task) {
-                    Log::info("Деталі задачі: ", (array) $task);
+                    if (!is_array($task)) {
+                        Log::warning("Некорректный формат задачи", ['task' => $task]);
+                        continue;
+                    }
 
-                    $taskName = $task->name ?? '[Без назви]';
-                    $taskStatus = $statusMapping[$task->idList] ?? '[Невідомий статус]';
-                    $taskDueDate = $task->due ? date("Y-m-d", strtotime($task->due)) : '[Без дати]';
-                    $taskLink = $task->shortUrl ?? '[Немає посилання]';
+                    Log::info("Деталі задачі: ", $task);
+
+                    $taskName = $task['name'] ?? '[Без назви]';
+                    $taskStatus = $statusMapping[$task['idList'] ?? ''] ?? '[Невідомий статус]';
+                    $taskDueDate = isset($task['due']) ? date("Y-m-d", strtotime($task['due'])) : '[Без дати]';
+                    $taskLink = $task['shortUrl'] ?? '[Немає посилання]';
 
                     $report .= "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n\n";
                 }
@@ -115,7 +124,4 @@
 
             $this->telegramService->sendMessage($chatId, $report);
         }
-
-
-
     }
