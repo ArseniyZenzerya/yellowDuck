@@ -75,4 +75,17 @@
                 return [];
             }
         }
+
+        public function getUsernameByMemberId(string $memberId): ?string
+        {
+            $url = "https://api.trello.com/1/members/{$memberId}?key={$this->apiKey}&token={$this->token}";
+            $response = Http::get($url);
+
+            if ($response->successful()) {
+                return $response->json()['username'] ?? null;
+            }
+
+            return null;
+        }
+
     }

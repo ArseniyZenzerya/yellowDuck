@@ -113,7 +113,7 @@
 
                 $userTasks = array_filter($tasks, function($task) use ($user, $usernameMapping) {
                     foreach ($task['idMembers'] as $memberId) {
-                        $taskUsername = $this->getUsernameByMemberId($memberId);
+                        $taskUsername = $this->trelloService->getUsernameByMemberId($memberId);
 
                         if ($taskUsername === $user->trello_username) {
                             return true;
