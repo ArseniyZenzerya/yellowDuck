@@ -30,8 +30,8 @@
             }
         }
 
-        public function getAllUsersInGroup(int $chatId): array
+        public function getAllUsersInGroup(): array
         {
-            return User::where('chat_id', $chatId)->get()->toArray();
+            return User::all()->toArray();
         }
     }
