@@ -19,4 +19,14 @@
         {
             return User::where('telegram_id', $chatId)->first();
         }
+
+        public function linkTrelloAccount(int $chatId, string $email): void
+        {
+            $user = $this->getUserByChatId($chatId);
+
+            if ($user) {
+                $user->trello_email = $email;
+                $user->save();
+            }
+        }
     }

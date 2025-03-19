@@ -9,11 +9,16 @@
     {
         protected TelegramService $telegramService;
         protected UserServiceInterface $userService;
+        protected TrelloService $trelloService;
 
-        public function __construct(TelegramService $telegramService, UserServiceInterface $userService)
-        {
+        public function __construct(
+            TelegramService $telegramService,
+            UserServiceInterface $userService,
+            TrelloService $trelloService
+        ) {
             $this->telegramService = $telegramService;
             $this->userService = $userService;
+            $this->trelloService = $trelloService;
         }
 
         public function handle(array $data): void
@@ -24,17 +29,50 @@
 
             $chatId = $data['message']['chat']['id'];
             $name = $data['message']['chat']['first_name'] ?? 'користувач';
-            $text = $data['message']['text'];
+            $text = trim($data['message']['text']);
 
-            if ($text === "/start") {
-                $user = $this->userService->getUserByChatId($chatId);
+            $command = strtok($text, ' ');
+            $argument = trim(str_replace($command, '', $text));
 
-                if ($user) {
-                    $this->telegramService->sendMessage($chatId, "Привіт, $name! Раді бачити вас знову.");
-                } else {
-                    $this->userService->addOrUpdateUser($chatId, $name);
-                    $this->telegramService->sendMessage($chatId, "Вітаємо, $name! Ви додані до бази.");
-                }
+            match ($command) {
+                '/start' => $this->handleStartCommand($chatId, $name),
+                '/linkTrelloAccount' => $this->handleLinkTrelloAccountCommand($chatId, $argument),
+                default => null,
+            };
+        }
+
+        private function handleStartCommand(int $chatId, string $name): void
+        {
+            $user = $this->userService->getUserByChatId($chatId);
+
+            $message = $user
+                ? "Привіт, $name! Раді бачити вас знову."
+                : "Вітаємо, $name! Ви додані до бази.";
+
+            if (!$user) {
+                $this->userService->addOrUpdateUser($chatId, $name);
             }
+
+            $this->telegramService->sendMessage($chatId, $message);
+        }
+
+        private function handleLinkTrelloAccountCommand(int $chatId, string $email): void
+        {
+            if (empty($email)) {
+                $this->telegramService->sendMessage(
+                    $chatId,
+                    "Будь ласка, введіть ваш email, який ви використовуєте в Trello в форматі /linkTrelloAccount example@gmail.com."
+                );
+                return;
+            }
+
+            if ($this->trelloService->isEmailInBoard($email)) {
+                $this->userService->linkTrelloAccount($chatId, $email);
+                $message = "Ваш акаунт Trello успішно лінковано з email: $email.";
+            } else {
+                $message = "Не вдалося знайти акаунт Trello з таким email. Перевірте правильність.";
+            }
+
+            $this->telegramService->sendMessage($chatId, $message);
         }
     }

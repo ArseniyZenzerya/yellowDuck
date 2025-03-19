@@ -11,5 +11,5 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'telegram_id'];
+    protected $fillable = ['name', 'telegram_id', 'trello_email'];
 }

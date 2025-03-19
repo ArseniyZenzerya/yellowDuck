@@ -1,6 +1,5 @@
 <?php
 
-    use App\Http\Controllers\TelegramController;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Route;
     use App\Http\Controllers\WebhookController;
@@ -26,6 +25,10 @@
         return (new WebhookController($handler))->webhook($request);
     });
 
-    Route::post('/webhook/trello', function (Request $request, TrelloWebhookService $handler) {
+    Route::match(['head', 'get', 'post'], '/webhook/trello', function (Request $request, TrelloWebhookService $handler) {
+        if ($request->isMethod('head') || $request->isMethod('get')) {
+            return response()->json(['status' => 'Webhook validated'], 200);
+        }
+
         return (new WebhookController($handler))->webhook($request);
     });
