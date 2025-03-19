@@ -32,6 +32,6 @@
 
         public function getAllUsersInGroup(): array
         {
-            return User::all()->toArray();
+            return User::all();
         }
     }
