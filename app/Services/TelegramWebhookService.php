@@ -96,7 +96,7 @@
             }
 
             foreach ($users as $user) {
-                if (empty($user->trello_id)) {
+                if (empty($user->trello_email)) {
                     $report .= "{$user->name} - акаунт Trello не підключено.\n";
                     continue;
                 }
@@ -109,7 +109,7 @@
                         continue;
                     }
 
-                    if (!in_array($user->trello_id, $task->members)) {
+                    if (!in_array($user->trello_email, $task->members)) {
                         continue;
                     }
 
