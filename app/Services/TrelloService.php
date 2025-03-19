@@ -55,8 +55,31 @@
                 'token' => $this->token,
             ]);
 
-            return $response->successful() ? $response->json() : null;
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $allTasks = $response->json();
+            $filteredTasks = [];
+
+            foreach ($allTasks as $task) {
+                if (!isset($task['idMembers']) || !is_array($task['idMembers'])) {
+                    continue;
+                }
+
+                foreach ($task['idMembers'] as $memberId) {
+                    $username = $this->getUsernameByMemberId($memberId);
+
+                    if ($username === $trelloAccount) {
+                        $filteredTasks[] = $task;
+                        break;
+                    }
+                }
+            }
+
+            return $filteredTasks;
         }
+
 
         public function getBoardLists(): array
         {
