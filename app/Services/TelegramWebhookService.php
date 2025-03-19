@@ -56,21 +56,21 @@
             $this->telegramService->sendMessage($chatId, $message);
         }
 
-        private function handleLinkTrelloAccountCommand(int $chatId, string $email): void
+        private function handleLinkTrelloAccountCommand(int $chatId, string $username): void
         {
-            if (empty($email)) {
+            if (empty($username)) {
                 $this->telegramService->sendMessage(
                     $chatId,
-                    "Будь ласка, введіть ваш email, який ви використовуєте в Trello в форматі /linkTrelloAccount example@gmail.com."
+                    "Будь ласка, введіть ваш username, який ви використовуєте в Trello в форматі /linkTrelloAccount username."
                 );
                 return;
             }
 
-            if ($this->trelloService->isEmailInBoard($email)) {
-                $this->userService->linkTrelloAccount($chatId, $email);
-                $message = "Ваш акаунт Trello успішно лінковано з email: $email.";
+            if ($this->trelloService->isEmailInBoard($username)) {
+                $this->userService->linkTrelloAccount($chatId, $username);
+                $message = "Ваш акаунт Trello успішно лінковано з username: $username.";
             } else {
-                $message = "Не вдалося знайти акаунт Trello з таким email. Перевірте правильність.";
+                $message = "Не вдалося знайти акаунт Trello з таким username. Перевірте правильність.";
             }
 
             $this->telegramService->sendMessage($chatId, $message);

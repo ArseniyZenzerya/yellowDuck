@@ -28,12 +28,12 @@
             return $response->json();
         }
 
-        public function isEmailInBoard(string $email): bool
+        public function isEmailInBoard(string $username): bool
         {
             $members = $this->getBoardMembers();
 
             foreach ($members as $member) {
-                if (isset($member['email']) && $member['email'] === $email) {
+                if (isset($member['username']) && $member['username'] === $username) {
                     return true;
                 }
             }
