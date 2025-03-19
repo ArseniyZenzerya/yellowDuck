@@ -89,42 +89,46 @@
             $statusMapping = [];
 
             foreach ($lists as $list) {
-                if (!isset($list['id'], $list['name'])) {
-                    continue;
+                if (isset($list['id'], $list['name'])) {
+                    $statusMapping[$list['id']] = $list['name'];
                 }
-                $statusMapping[$list['id']] = $list['name'];
             }
 
             foreach ($users as $user) {
-                if (empty($user->trello_email)) {
-                    $report .= "{$user->name} - акаунт Trello не підключено.\n";
+                $tasks = $this->trelloService->getTasksForUser($user);
+
+                if (empty($tasks)) {
+                    $report .= "{$user->name} - акаунт Trello не підключено або немає задач.\n";
                     continue;
                 }
 
-                $tasks = $this->trelloService->getTasksForUser($user);
-                $userTasks = [];
+                $report .= "{$user->name} - поточні завдання:\n";
 
-                foreach ($tasks as $task) {
-                    if (!isset($task->idList, $task->name, $task->shortUrl, $task->members) || empty($task->members)) {
-                        continue;
-                    }
-
-                    if (!in_array($user->trello_email, $task->members)) {
-                        continue;
-                    }
-
-                    $taskName = $task->name ?? '[Без назви]';
-                    $taskStatus = $statusMapping[$task->idList] ?? '[Невідомий статус]';
-                    $taskDueDate = $task->due ? date("Y-m-d", strtotime($task->due)) : '[Без дати]';
-                    $taskLink = $task->shortUrl ?? '[Немає посилання]';
-
-                    $userTasks[] = "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n";
-                }
+                $userTasks = array_filter($tasks, function($task) use ($user) {
+                    return in_array($user->trello_username, array_map(function($memberId) {
+                        return $this->trelloService->getUsernameByMemberId($memberId);
+                    }, $task['idMembers']));
+                });
 
                 if (empty($userTasks)) {
-                    $report .= "{$user->name} - немає активних завдань.\n";
-                } else {
-                    $report .= "{$user->name} - поточні завдання:\n" . implode("\n", $userTasks) . "\n";
+                    $report .= "- Немає задач для цього користувача.\n";
+                    continue;
+                }
+
+                foreach ($userTasks as $task) {
+                    if (!is_array($task)) {
+                        Log::warning("Некорректный формат задачи", ['task' => $task]);
+                        continue;
+                    }
+
+                    Log::info("Деталі задачі: ", $task);
+
+                    $taskName = $task['name'] ?? '[Без назви]';
+                    $taskStatus = $statusMapping[$task['idList'] ?? ''] ?? '[Невідомий статус]';
+                    $taskDueDate = isset($task['due']) ? date("Y-m-d", strtotime($task['due'])) : '[Без дати]';
+                    $taskLink = $task['shortUrl'] ?? '[Немає посилання]';
+
+                    $report .= "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n\n";
                 }
             }
 
