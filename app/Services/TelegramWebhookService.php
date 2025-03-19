@@ -94,6 +94,12 @@
                 }
             }
 
+            $boardMembers = $this->trelloService->getBoardMembers();
+            $usernameMapping = [];
+            foreach ($boardMembers as $member) {
+                $usernameMapping[$member['username']] = $member['id'];
+            }
+
             foreach ($users as $user) {
                 $tasks = $this->trelloService->getTasksForUser($user);
 
@@ -104,10 +110,8 @@
 
                 $report .= "{$user->name} - поточні завдання:\n";
 
-                $userTasks = array_filter($tasks, function($task) use ($user) {
-                    return in_array($user->trello_username, array_map(function($memberId) {
-                        return $this->trelloService->getUsernameByMemberId($memberId);
-                    }, $task['idMembers']));
+                $userTasks = array_filter($tasks, function($task) use ($user, $usernameMapping) {
+                    return in_array($usernameMapping[$user->trello_username] ?? null, $task['idMembers']);
                 });
 
                 if (empty($userTasks)) {
@@ -134,5 +138,6 @@
 
             $this->telegramService->sendMessage($chatId, $report);
         }
+
 
     }
