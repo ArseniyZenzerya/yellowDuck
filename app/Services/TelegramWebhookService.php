@@ -94,6 +94,7 @@
                 }
             }
 
+            // Получаем список всех участников доски с их usernames
             $boardMembers = $this->trelloService->getBoardMembers();
             $usernameMapping = [];
             foreach ($boardMembers as $member) {
@@ -111,7 +112,15 @@
                 $report .= "{$user->name} - поточні завдання:\n";
 
                 $userTasks = array_filter($tasks, function($task) use ($user, $usernameMapping) {
-                    return in_array($usernameMapping[$user->trello_username] ?? null, $task['idMembers']);
+                    foreach ($task['idMembers'] as $memberId) {
+                        $taskUsername = $this->getUsernameByMemberId($memberId);
+
+                        if ($taskUsername === $user->trello_username) {
+                            return true;
+                        }
+                    }
+
+                    return false;
                 });
 
                 if (empty($userTasks)) {
@@ -138,6 +147,4 @@
 
             $this->telegramService->sendMessage($chatId, $report);
         }
-
-
     }
