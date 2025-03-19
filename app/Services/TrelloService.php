@@ -57,4 +57,22 @@
 
             return $response->successful() ? $response->json() : null;
         }
+
+        public function getBoardLists(): array
+        {
+            $url = "https://api.trello.com/1/boards/{$this->boardId}/lists?key={$this->apiKey}&token={$this->token}";
+
+            $response = Http::get($url);
+
+            if ($response->successful()) {
+                $lists = $response->json();
+
+                return array_map(fn($list) => [
+                    'id' => $list['id'],
+                    'name' => $list['name'],
+                ], $lists);
+            } else {
+                return [];
+            }
+        }
     }

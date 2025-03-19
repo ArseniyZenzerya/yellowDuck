@@ -84,27 +84,38 @@
             $users = $this->userService->getAllUsersInGroup();
             $report = "Звіт по завданням:\n";
 
+            $lists = $this->trelloService->getBoardLists();
+            $statusMapping = [];
+
+            foreach ($lists as $list) {
+                $statusMapping[$list->id] = $list->name;
+            }
+
             foreach ($users as $user) {
                 $tasks = $this->trelloService->getTasksForUser($user);
 
-                if ($tasks === null || empty($tasks)) {
-                    $report .= $user->name . " - акаунт Trello не підключено або немає задач.\n";
-                } else {
-                    $report .= $user->name . " - поточні завдання:\n";
-                    foreach ($tasks as $task) {
-                        $taskName = $task->name ?? 'Невідомо';
-                        $taskStatus = $task->status ?? 'Невідомо';
-                        $taskDueDate = $task->due_date ?? 'Немає';
-                        $taskLink = $task->link ?? 'Немає посилання';
+                if (empty($tasks)) {
+                    $report .= "{$user->name} - акаунт Trello не підключено або немає задач.\n";
+                    continue;
+                }
 
-                        $report .= "- $taskName\n  Статус: $taskStatus\n  Дата завершення: $taskDueDate\n  Посилання: $taskLink\n\n";
-                    }
+                $report .= "{$user->name} - поточні завдання:\n";
+
+                foreach ($tasks as $task) {
+                    Log::info("Деталі задачі: ", (array) $task);
+
+                    $taskName = $task->name ?? '[Без назви]';
+                    $taskStatus = $statusMapping[$task->idList] ?? '[Невідомий статус]';
+                    $taskDueDate = $task->due ? date("Y-m-d", strtotime($task->due)) : '[Без дати]';
+                    $taskLink = $task->shortUrl ?? '[Немає посилання]';
+
+                    $report .= "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n\n";
                 }
             }
 
-            // Отправляем отчет в чат
             $this->telegramService->sendMessage($chatId, $report);
         }
+
 
 
     }
