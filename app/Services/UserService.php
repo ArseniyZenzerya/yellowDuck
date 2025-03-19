@@ -30,7 +30,7 @@
             }
         }
 
-        public function getAllUsersInGroup(): array
+        public function getAllUsersInGroup(): User
         {
             return User::all();
         }
