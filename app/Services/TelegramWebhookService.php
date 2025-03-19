@@ -4,6 +4,7 @@
 
     use App\Contracts\WebhookHandlerInterface;
     use App\Contracts\UserServiceInterface;
+    use Illuminate\Support\Facades\Log;
 
     class TelegramWebhookService implements WebhookHandlerInterface
     {
@@ -24,7 +25,9 @@
         public function handle(array $data): void
         {
             if (!isset($data['message'])) {
-                return;
+                if (!isset($data['message']['text'])) {
+                    Log::info('Received non-text message:', $data);
+                }
             }
 
             $chatId = $data['message']['chat']['id'];
