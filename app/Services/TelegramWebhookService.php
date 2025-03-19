@@ -88,7 +88,7 @@
             $statusMapping = [];
 
             foreach ($lists as $list) {
-                $statusMapping[$list->id] = $list->name;
+                $statusMapping[$list['id']] = $list['name'];
             }
 
             foreach ($users as $user) {
