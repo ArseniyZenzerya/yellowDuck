@@ -24,10 +24,9 @@
 
         public function handle(array $data): void
         {
-            if (!isset($data['message'])) {
-                if (!isset($data['message']['text'])) {
-                    Log::info('Received non-text message:', $data);
-                }
+            if (!isset($data['message']['text'])) {
+                Log::info('Received non-text message:', $data);
+                return;
             }
 
             $chatId = $data['message']['chat']['id'];
@@ -77,5 +76,24 @@
             }
 
             $this->telegramService->sendMessage($chatId, $message);
+        }
+
+        private function handleTaskReportCommand(int $chatId): void
+        {
+            $users = $this->userService->getAllUsersInGroup($chatId);
+            $report = "Звіт по завданням:\n";
+
+            foreach ($users as $user) {
+                $tasks = $this->trelloService->getTasksForUser($user);
+
+                if ($tasks === null) {
+                    $report .= $user->name . " - акаунт Trello не підключено.\n";
+                } else {
+                    $report .= $user->name . " - поточні завдання: " . count($tasks) . "\n";
+                }
+            }
+
+            // Отправляем отчет в Telegram
+            $this->telegramService->sendMessage($chatId, $report);
         }
     }
