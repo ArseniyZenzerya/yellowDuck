@@ -81,28 +81,30 @@
 
         private function handleTaskReportCommand(int $chatId): void
         {
-            $users = $this->userService->getAllUsersInGroup($chatId);
+            $users = $this->userService->getAllUsersInGroup();
             $report = "Звіт по завданням:\n";
 
             foreach ($users as $user) {
                 $tasks = $this->trelloService->getTasksForUser($user);
 
-                if ($tasks === null) {
-                    $report .= $user->name . " - акаунт Trello не підключено.\n";
+                if ($tasks === null || empty($tasks)) {
+                    $report .= $user->name . " - акаунт Trello не підключено або немає задач.\n";
                 } else {
                     $report .= $user->name . " - поточні завдання:\n";
                     foreach ($tasks as $task) {
-                        $taskName = $task['name'];
-                        $taskStatus = $task['status'];
-                        $taskDueDate = $task['due_date'] ?? 'Немає';
-                        $taskLink = $task['link'] ?? 'Немає посилання';
+                        $taskName = $task->name ?? 'Невідомо';
+                        $taskStatus = $task->status ?? 'Невідомо';
+                        $taskDueDate = $task->due_date ?? 'Немає';
+                        $taskLink = $task->link ?? 'Немає посилання';
 
                         $report .= "- $taskName\n  Статус: $taskStatus\n  Дата завершення: $taskDueDate\n  Посилання: $taskLink\n\n";
                     }
                 }
             }
 
+            // Отправляем отчет в чат
             $this->telegramService->sendMessage($chatId, $report);
         }
+
 
     }
