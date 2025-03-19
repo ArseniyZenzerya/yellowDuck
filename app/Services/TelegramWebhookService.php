@@ -39,6 +39,7 @@
             match ($command) {
                 '/start' => $this->handleStartCommand($chatId, $name),
                 '/linkTrelloAccount' => $this->handleLinkTrelloAccountCommand($chatId, $argument),
+                '/report' => $this->handleTaskReportCommand($chatId),
                 default => null,
             };
         }
@@ -89,11 +90,19 @@
                 if ($tasks === null) {
                     $report .= $user->name . " - акаунт Trello не підключено.\n";
                 } else {
-                    $report .= $user->name . " - поточні завдання: " . count($tasks) . "\n";
+                    $report .= $user->name . " - поточні завдання:\n";
+                    foreach ($tasks as $task) {
+                        $taskName = $task['name'];
+                        $taskStatus = $task['status'];
+                        $taskDueDate = $task['due_date'] ?? 'Немає';
+                        $taskLink = $task['link'] ?? 'Немає посилання';
+
+                        $report .= "- $taskName\n  Статус: $taskStatus\n  Дата завершення: $taskDueDate\n  Посилання: $taskLink\n\n";
+                    }
                 }
             }
 
-            // Отправляем отчет в Telegram
             $this->telegramService->sendMessage($chatId, $report);
         }
+
     }

@@ -2,6 +2,7 @@
 
     namespace App\Services;
 
+    use App\Models\User;
     use Illuminate\Support\Facades\Http;
 
     class TrelloService
@@ -39,5 +40,21 @@
             }
 
             return false;
+        }
+
+        public function getTasksForUser(User $user): ?array
+        {
+            $trelloAccount = $user->trello_email;
+
+            if (!$trelloAccount) {
+                return null;
+            }
+            $url = "https://api.trello.com/1/boards/" . env("TRELLO_BOARD_ID") . "/cards";
+            $response = Http::get($url, [
+                'key' => $this->apiKey,
+                'token' => $this->token,
+            ]);
+
+            return $response->successful() ? $response->json() : null;
         }
     }

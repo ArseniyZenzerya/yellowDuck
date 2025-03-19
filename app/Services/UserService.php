@@ -29,4 +29,9 @@
                 $user->save();
             }
         }
+
+        public function getAllUsersInGroup(int $chatId): array
+        {
+            return User::where('chat_id', $chatId)->get()->toArray();
+        }
     }
