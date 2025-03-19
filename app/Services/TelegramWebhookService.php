@@ -82,38 +82,48 @@
 
         private function handleTaskReportCommand(int $chatId): void
         {
+            Log::info('Start handleTaskReportCommand', ['chatId' => $chatId]);
+
             $users = $this->userService->getAllUsersInGroup();
             $report = "Звіт по завданням:\n";
 
             $lists = $this->trelloService->getBoardLists();
             $statusMapping = [];
-
             foreach ($lists as $list) {
                 if (isset($list['id'], $list['name'])) {
                     $statusMapping[$list['id']] = $list['name'];
                 }
             }
 
-            // Получаем список всех участников доски с их usernames
+            Log::info('Status mapping', ['statusMapping' => $statusMapping]);
+
             $boardMembers = $this->trelloService->getBoardMembers();
             $usernameMapping = [];
             foreach ($boardMembers as $member) {
                 $usernameMapping[$member['username']] = $member['id'];
             }
 
+            Log::info('Username mapping', ['usernameMapping' => $usernameMapping]);
+
             foreach ($users as $user) {
+                Log::info('Processing user', ['user' => $user]);
+
                 $tasks = $this->trelloService->getTasksForUser($user);
 
                 if (empty($tasks)) {
                     $report .= "{$user->name} - акаунт Trello не підключено або немає задач.\n";
+                    Log::info('No tasks for user', ['user' => $user]);
                     continue;
                 }
 
                 $report .= "{$user->name} - поточні завдання:\n";
 
                 $userTasks = array_filter($tasks, function($task) use ($user, $usernameMapping) {
+                    Log::info('Processing task', ['task' => $task]);
+
                     foreach ($task['idMembers'] as $memberId) {
                         $taskUsername = $this->trelloService->getUsernameByMemberId($memberId);
+                        Log::info('Comparing task username', ['taskUsername' => $taskUsername, 'userUsername' => $user->trello_username]);
 
                         if ($taskUsername === $user->trello_username) {
                             return true;
@@ -125,6 +135,7 @@
 
                 if (empty($userTasks)) {
                     $report .= "- Немає задач для цього користувача.\n";
+                    Log::info('No tasks for user after filtering', ['user' => $user]);
                     continue;
                 }
 
@@ -145,6 +156,8 @@
                 }
             }
 
+
             $this->telegramService->sendMessage($chatId, $report);
         }
+
     }
