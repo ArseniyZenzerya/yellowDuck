@@ -85,43 +85,50 @@
             $users = $this->userService->getAllUsersInGroup();
             $report = "Звіт по завданням:\n";
 
-            // Получаем списки доски Trello и создаем соответствие ID -> Название
             $lists = $this->trelloService->getBoardLists();
             $statusMapping = [];
 
             foreach ($lists as $list) {
-                if (isset($list['id'], $list['name'])) {
-                    $statusMapping[$list['id']] = $list['name'];
+                if (!isset($list['id'], $list['name'])) {
+                    continue;
                 }
+                $statusMapping[$list['id']] = $list['name'];
             }
 
             foreach ($users as $user) {
-                $tasks = $this->trelloService->getTasksForUser($user);
-
-                if (empty($tasks)) {
-                    $report .= "{$user->name} - акаунт Trello не підключено або немає задач.\n";
+                if (empty($user->trello_id)) {
+                    $report .= "{$user->name} - акаунт Trello не підключено.\n";
                     continue;
                 }
 
-                $report .= "{$user->name} - поточні завдання:\n";
+                $tasks = $this->trelloService->getTasksForUser($user);
+                $userTasks = [];
 
                 foreach ($tasks as $task) {
-                    if (!is_array($task)) {
-                        Log::warning("Некорректный формат задачи", ['task' => $task]);
+                    if (!isset($task->idList, $task->name, $task->shortUrl, $task->members) || empty($task->members)) {
                         continue;
                     }
 
-                    Log::info("Деталі задачі: ", $task);
+                    if (!in_array($user->trello_id, $task->members)) {
+                        continue;
+                    }
 
-                    $taskName = $task['name'] ?? '[Без назви]';
-                    $taskStatus = $statusMapping[$task['idList'] ?? ''] ?? '[Невідомий статус]';
-                    $taskDueDate = isset($task['due']) ? date("Y-m-d", strtotime($task['due'])) : '[Без дати]';
-                    $taskLink = $task['shortUrl'] ?? '[Немає посилання]';
+                    $taskName = $task->name ?? '[Без назви]';
+                    $taskStatus = $statusMapping[$task->idList] ?? '[Невідомий статус]';
+                    $taskDueDate = $task->due ? date("Y-m-d", strtotime($task->due)) : '[Без дати]';
+                    $taskLink = $task->shortUrl ?? '[Немає посилання]';
 
-                    $report .= "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n\n";
+                    $userTasks[] = "- {$taskName}\n  Статус: {$taskStatus}\n  Дата завершення: {$taskDueDate}\n  Посилання: {$taskLink}\n";
+                }
+
+                if (empty($userTasks)) {
+                    $report .= "{$user->name} - немає активних завдань.\n";
+                } else {
+                    $report .= "{$user->name} - поточні завдання:\n" . implode("\n", $userTasks) . "\n";
                 }
             }
 
             $this->telegramService->sendMessage($chatId, $report);
         }
+
     }
